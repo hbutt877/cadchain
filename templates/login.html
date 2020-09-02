@@ -1,0 +1,79 @@
+{% block title %}Login Page{% endblock %}
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+<script type=text/javascript>
+  $SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
+</script>
+
+<script type=text/javascript>
+  $(function() {
+    $('#depositCurrency').change( function() {
+			$("#depositAmount").val('');
+      $.get($SCRIPT_ROOT + '/currencyPair',{
+				symbol: $('#depositCurrency').val()
+			}, function(data) {
+				$("#receiveCurrency").html('');
+				console.log($('#depositCurrency').val());
+				$.each(data.result, function(){
+    		$("#receiveCurrency").append('<option value="'+ this.symbol +'">'+ this.name +'</option>')
+});
+      });
+      return false;
+    });
+  });
+	$(function() {
+		$('#depositAmount').change( function() {
+			$.get($SCRIPT_ROOT + '/getRate',{
+				deposit: $('#depositCurrency').val(),
+				receive: $('#receiveCurrency').val(),
+				amount:  $('#depositAmount').val()
+			}, function(data) {
+				console.log(data.result);
+				$('#rate').text(data.result['rate']);
+			});
+      $.get($SCRIPT_ROOT + '/getMinMax',{
+        deposit: $('#depositCurrency').val(),
+        receive: $('#receiveCurrency').val(),
+        amount:  $('#depositAmount').val()
+      }, function(data) {
+        console.log(data.result);
+        if(data.result['error']==1){
+          console.log("hello error");
+          if(data.result['max']!="null"){
+            $('#error').text("Minimum amount is "+data.result['min']+" and Maximum amount is "+data.result['max']);
+          }
+          else{
+            $('#error').text("Minimum amount is "+data.result['min']);
+          }
+          $("#btnSubmit").attr("disabled", true);
+        }
+        else{
+          $('#error').text("");
+          $("#btnSubmit").attr("disabled", false);
+        }
+      });
+			return false;
+		});
+	});
+</script>
+<h1>jQuery Example</h1>
+<a href=# id=calculate>calculate server side</a>
+<a id="result"> result here</a>
+
+<form method="post">
+	<p>You send (bitcoins):</p>
+<select name="depositCurrency" id="depositCurrency">
+		<option>Please select an option</option>
+		{% for i in depositCurrency%}
+		<option value={{i['symbol']}}>{{i['name']}}</option>
+{% endfor %}
+</select>
+	<p><input type="text" name="amount"  id="depositAmount" /></p>
+	<select name="receiveCurrency" id="receiveCurrency"></select>
+	<p>Exchange Rate</p>
+	<p id="rate">0</p>
+  <p id="error">lora</p>
+	<p>ethereum address</p>
+	<p><input type="text" id="address" name="address"/></p>
+	<p><input type="submit" id="btnSubmit" value="Exchange"/></p>
+</form>
